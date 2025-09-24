@@ -1,9 +1,6 @@
-import express from 'express';
-import { EPharmaAPI } from '../infra/http/EpharmaApi';
+import app from "../application/app";
 
-
-const app = express();
-const api = new EPharmaAPI();
-
-
-app.listen(3000, () => console.log('Gateway rodando na porta 3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});

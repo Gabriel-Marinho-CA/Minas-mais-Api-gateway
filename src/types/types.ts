@@ -74,6 +74,8 @@ export type AuthType = {
 
 // Client/Industry/Associated - Lista de todos os associados ( programa e seus respectivos produtos )
 
+
+
 export type AssociateType = {
     success: boolean
     pagination: {
@@ -83,7 +85,7 @@ export type AssociateType = {
         totalPages: number
     }
     messages: any
-    error: any
+    error: any     
     data: Array<{
         benefit: {
             id: string

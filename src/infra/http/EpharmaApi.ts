@@ -13,6 +13,8 @@ export class EPharmaAPI {
     private token: string | null = null;
     private expiresAt: number | null = null;
     private http: AxiosInstance;
+    private benefit_id: number | string | null = null;
+    private ean: number | string | null = null;
 
     constructor() {
         this.http = axios.create({ baseURL: process.env.API_HOST });
@@ -54,16 +56,35 @@ export class EPharmaAPI {
      * DOC: https://documenter.getpostman.com/view/16776555/2s9YeD8YEq#9bb42797-d8f1-44de-bbc7-da2b23ac1191
     */
 
-    async getAssociate() {
-        const { data } = await this.http.get<AssociateType>(`${process.env.API_GET_ASSOCIATE_LIST}/${process.env.API_CNPJ_TEST}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                },
-            }
-        )
 
-        return data;
+    // Em tese aqui entra a rotina de armazenamento dos produtos por beneficiario ( lista muito grande), então aqui o ideal seria consultar no BD.
+
+
+    // async getAssociate() {
+    //     const { data }:AssociateType = await this.http.get<AssociateType>(`${process.env.API_GET_ASSOCIATE_LIST}/${process.env.API_CNPJ_TEST}`,
+    //         {
+    //             headers: {
+    //                 Authorization: `Bearer ${this.token}`,
+    //             },
+    //         }
+    //     )
+
+    //     // Será 1 ou varios beneficios?
+
+    //     return data;
+    // }
+
+    async getProductsInAssociate(ean_product) {
+        // Faz um get para o bd 
+        const data = axios.get('BD');
+        const benefitFound = data.find(({ benefit }) =>
+            benefit.products.some(product => product.ean === ean_product)
+        );
+
+        this.benefit_id = benefitFound.id;
+        this.ean = benefitFound
+
+        return benefitFound;
     }
 
     /**
@@ -73,8 +94,8 @@ export class EPharmaAPI {
      * DOC: https://documenter.getpostman.com/view/16776555/2s9YeD8YEq#718dc8f3-b57c-45d4-97e9-707f2d3fb274
      */
 
-    async getClientMembershipExists(benefit_id: string, cpf: string, ean: string) {
-        const { data: { data: { membership, product } } } = await this.http.get<ClientMembershipAndProductExists>(`${process.env.API_GET_BENEFICIARY_MEMBERSHIP_EXISTS}/${benefit_id}/${cpf}/${ean}`,
+    async getClientMembershipExists(cpf: string) {
+        const { data: { data: { membership, product } } } = await this.http.get<ClientMembershipAndProductExists>(`${process.env.API_GET_BENEFICIARY_MEMBERSHIP_EXISTS}/${this.benefit_id}/${cpf}/${this.ean}`,
             {
                 headers: {
                     Authorization: `Bearer ${this.token}`,
