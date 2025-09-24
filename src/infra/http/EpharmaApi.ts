@@ -17,9 +17,6 @@ export class EPharmaAPI {
     private benefit_id: string | undefined = undefined;
     private ean: number | string | null = null;
 
-    private requiresMembership: boolean | undefined = false;
-    private allowCustomMembership: boolean | undefined = false;
-
     constructor() {
         this.http = axios.create({ baseURL: process.env.API_HOST });
     }
@@ -109,9 +106,6 @@ export class EPharmaAPI {
                 }
             );
 
-            this.requiresMembership = membership;
-            this.allowCustomMembership = product;
-
             if (!membership || !product) {
                 const formFields = await this.generateFormRegisterBeneficiary();
 
@@ -153,7 +147,14 @@ export class EPharmaAPI {
 
     }
 
-    async sendBeneficiaryForm() {
+    /**
+     * - Beneficiary/Dynamic - 
+     * Serviço utilizado para cadastrar o beneficiário, com base nos campos obtidos no serviço de configuração de cadastro (Beneficiary/Register/Configuration).
+     * 
+     * DOC: https://documenter.getpostman.com/view/16776555/2s9YeD8YEq#718dc8f3-b57c-45d4-97e9-707f2d3fb274
+     */
+
+    async sendBeneficiaryForm(formData) {
 
         // .env API_POST_BENEFICIARY_FORM = /Beneficiary/api/v1/Beneficiary/Dynamic/  # {{benefit_id}}?messaging=true
 

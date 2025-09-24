@@ -34,7 +34,16 @@ export class EpharmaController {
             return res.json(client_exist_data_form_fields);
 
         } catch (error) {
-            console.error('Fail to get associate - ', error.message);
+            console.error('Fail to check if has membership and product to client - ', error.message);
+        }
+    }
+
+
+    async sendFormRegisterBeneficiary(formData, res?: Response) {
+        try {
+            const sendFormResponse = await epharmaApiService.sendBeneficiaryForm(formData);
+        } catch (error) {
+            console.error('Fail to send register form - ', error.message);
         }
     }
 
