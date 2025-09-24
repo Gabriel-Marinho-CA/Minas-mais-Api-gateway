@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { AssociateType, AuthType, ClientMembershipAndProductExists } from "../../types/types";
+import { Response, Request } from 'express';
 
 export class EPharmaAPI {
 
@@ -13,8 +14,11 @@ export class EPharmaAPI {
     private token: string | null = null;
     private expiresAt: number | null = null;
     private http: AxiosInstance;
-    private benefit_id: number | string | null = null;
+    private benefit_id: string | undefined = undefined;
     private ean: number | string | null = null;
+
+    private requiresMembership: boolean | undefined = false;
+    private allowCustomMembership: boolean | undefined = false;
 
     constructor() {
         this.http = axios.create({ baseURL: process.env.API_HOST });
@@ -76,13 +80,13 @@ export class EPharmaAPI {
 
     async getProductsInAssociate(ean_product) {
         // Faz um get para o bd 
-        const data = axios.get('BD');
+        const { data }: AssociateType = axios.get('BD');
         const benefitFound = data.find(({ benefit }) =>
             benefit.products.some(product => product.ean === ean_product)
         );
 
-        this.benefit_id = benefitFound.id;
-        this.ean = benefitFound
+        this.benefit_id = benefitFound?.benefit.id;
+        this.ean = ean_product;
 
         return benefitFound;
     }
@@ -94,21 +98,74 @@ export class EPharmaAPI {
      * DOC: https://documenter.getpostman.com/view/16776555/2s9YeD8YEq#718dc8f3-b57c-45d4-97e9-707f2d3fb274
      */
 
-    async getClientMembershipExists(cpf: string) {
-        const { data: { data: { membership, product } } } = await this.http.get<ClientMembershipAndProductExists>(`${process.env.API_GET_BENEFICIARY_MEMBERSHIP_EXISTS}/${this.benefit_id}/${cpf}/${this.ean}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                },
-            }
-        )
+    async handleClientMembershipExistsForm(cpf: string) {
+        try {
 
-        const apiImportantInfo = {
-            hasMemership: membership,
-            productIsEnableToClientOrNeedSignUp: product
+            const { data: { data: { membership, product } } } = await this.http.get<ClientMembershipAndProductExists>(`${process.env.API_GET_BENEFICIARY_MEMBERSHIP_EXISTS}/${this.benefit_id}/${cpf}/${this.ean}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`,
+                    },
+                }
+            );
+
+            this.requiresMembership = membership;
+            this.allowCustomMembership = product;
+
+            if (!membership || !product) {
+                const formFields = await this.generateFormRegisterBeneficiary();
+
+                return formFields;
+
+            }
+
+
+        } catch (error) {
+            console.error('Error trying to get client membership -', error.message);
+            throw error;
         }
 
-        return apiImportantInfo;
+
+
+    }
+
+    /**
+     * - Beneficiary/Register/Configuration -
+     * Consultar as configurações de cadastro do beneficiário para benefícios que permitem o cadastro de via integração.
+     * 
+     * DOC: https://documenter.getpostman.com/view/16776555/2s9YeD8YEq#718dc8f3-b57c-45d4-97e9-707f2d3fb274
+     */
+
+    async generateFormRegisterBeneficiary() {
+
+        // .env = API_GET_BENEFICIARY_FORM_REGISTER_FIELDS = /Client/api/v1/Benefit/Beneficiary/Register/Configuration/  #{benefit_id}}?eans={{EAN}}
+
+        try {
+            const { data } = await axios.get<any>(`${process.env.API_GET_BENEFIARY_FORM_REGISTER_FIELDS}/${this.benefit_id}?eans=${this.ean}`);
+
+
+            return data;
+
+        } catch (error) {
+            console.error('Error trying to get form fields', error.message);
+            throw error;
+        }
+
+    }
+
+    async sendBeneficiaryForm() {
+
+        // .env API_POST_BENEFICIARY_FORM = /Beneficiary/api/v1/Beneficiary/Dynamic/  # {{benefit_id}}?messaging=true
+
+        try {
+            const data = await axios.post(`${process.env.API_POST_BENEFICIARY_FORM}/${this.benefit_id}?messaging=true`, formData);
+
+            return true;
+
+        } catch (error) {
+            console.error('Error sending form beneficiary', error.message);
+            throw error;
+        }
     }
 }
 

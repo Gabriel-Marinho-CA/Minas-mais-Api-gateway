@@ -29,8 +29,10 @@ export class EpharmaController {
         const cpf = req.params.cpf;
 
         try {
-            const client_exist_data = await epharmaApiService.getClientMembershipExists(cpf);
-            return res.json(client_exist_data);
+            const client_exist_data_form_fields = await epharmaApiService.handleClientMembershipExistsForm(cpf);
+
+            return res.json(client_exist_data_form_fields);
+
         } catch (error) {
             console.error('Fail to get associate - ', error.message);
         }
